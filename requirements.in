@@ -2,8 +2,7 @@ fastapi
 pydantic
 pydantic-settings
 uvicorn
-tortoise
-asyncpg
+tortoise-orm[asyncpg]
 python-dotenv
 python-jose
 passlib
