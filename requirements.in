@@ -1,0 +1,10 @@
+fastapi
+pydantic
+pydantic-settings
+uvicorn
+tortoise
+asyncpg
+python-dotenv
+python-jose
+passlib
+bcrypt
