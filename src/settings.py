@@ -1,3 +1,4 @@
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -6,6 +7,7 @@ class Settings(BaseSettings):
     server_host: str
     db_name: str
     db_host: str
+    db_port: int
     db_user: str
     db_password: str
 

@@ -1,18 +1,11 @@
 from tortoise import Tortoise
-
-from src import settings
-
-
-db_name: str = settings.db_name
-db_host: str = settings.db_host
-db_user: str = settings.db_user
-db_password: str = settings.db_password
+from src.database.db_config import config
 
 
-async def initialize():
-    await Tortoise.init(
-        db_url='',
-        modules={'models': ['models']}
-    )
+if __name__ == "__main__":
+    async def initialize():
+        await Tortoise.init(
+            config=config,
+        )
 
-    await Tortoise.generate_schemas()
+        await Tortoise.generate_schemas()
