@@ -8,10 +8,11 @@ from sqlalchemy.exc import IntegrityError
 from starlette import status
 from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.database import models
 from src.database.engine import get_async_session
 from src.database.models import User
-from src.schemas.auth_schema import User, Token, UserCreate
+from src.schemas.auth_schema import User, Token, UserCreate, BaseUser
 from src.settings import settings
 
 
@@ -57,7 +58,7 @@ class AuthService:
         return user
 
     @classmethod
-    def create_token(cls, user: User, ) -> Token | dict:
+    def create_token(cls, user: User, ) -> Token:
         user_data = User.model_validate(user)
         now = datetime.utcnow()
         payload = {
@@ -79,13 +80,13 @@ class AuthService:
         self.async_session = async_session
 
     # USER REGISTRATION METHOD
-    async def register_new_user(self, user_data: UserCreate) -> Token | HTTPException:
+    async def register_new_user(self, user_data: UserCreate) -> Token | dict:
         async with self.async_session as session:
             table = await session.execute(select(models.User).filter_by(email=user_data.email))
             user = table.scalar()
 
             if user:
-                return HTTPException(
+                raise HTTPException(
                     status.HTTP_409_CONFLICT,
                     detail="E-mail already exist",
                 )
@@ -99,22 +100,27 @@ class AuthService:
             try:
                 session.add(new_user)
                 await session.commit()
-            except Exception:
+            except IntegrityError:
                 await session.rollback()
                 raise HTTPException(
                     status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Something went wrong",
                 )
-            return self.create_token(user)
+
+            table = await session.execute(select(models.User).filter_by(email=user_data.email))
+            user = table.scalar()
+            token = self.create_token(user)
+
+            return token
 
     # USER AUTHENTICATION METHOD
-    async def authenticate_user(self, username: str, password: str) -> Token | HTTPException:
+    async def authenticate_user(self, username: str, password: str) -> Token:
         async with self.async_session as session:
             result = await session.execute(select(models.User).filter_by(username=username))
             user = result.scalar()
 
             if not user:
-                return HTTPException(
+                raise HTTPException(
                     status.HTTP_404_NOT_FOUND,
                     detail="User not found",
                 )
@@ -126,14 +132,21 @@ class AuthService:
             hashed_password = result.scalar()
 
             if not hashed_password:
-                return HTTPException(
+                raise HTTPException(
                     status.HTTP_404_NOT_FOUND,
                     detail="Password is incorrect",
                 )
 
             if not self.verify_password(password, hashed_password):
-                return HTTPException(
+                raise HTTPException(
                     status.HTTP_401_UNAUTHORIZED,
                     detail="Cannot validate credentials"
                 )
             return self.create_token(user)
+
+    # GET ALL USERS
+    async def get_users(self):
+        async with self.async_session as session:
+            result = await session.execute(select(models.User))
+            users = result.scalars().all()
+            return [BaseUser.model_validate(user) for user in users]
