@@ -1,47 +1,18 @@
-from tortoise import fields
-from tortoise.models import Model
+from sqlalchemy import String, Integer, ForeignKey, Boolean
+from sqlalchemy.orm import DeclarativeBase, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 
-class User(Model):
-    id = fields.IntField(pk=True)
-    email = fields.CharField(max_length=255, unique=True)
-    nickname = fields.CharField(max_length=255, null=True)
-    avatar = fields.CharField(max_length=255, null=True)
-    confirmed = fields.BooleanField(default=False)
-
-    credentials_local = fields.ReverseRelation["CredentialsLocal"]
-    credentials_google = fields.ReverseRelation["CredentialsGoogle"]
-    credentials_facebook = fields.ReverseRelation["CredentialsFacebook"]
-
-    class Meta:
-        table = 'users'
+class Base(DeclarativeBase):
+    pass
 
 
-class CredentialsLocal(Model):
-    id = fields.IntField(pk=True)
-    user = fields.ForeignKeyField('models.User', related_name='credentials_local', on_delete=fields.CASCADE)
-    login = fields.CharField(max_length=255, unique=True)  # login is same as email
-    password = fields.CharField(max_length=255)
-    version = fields.IntField(default=1)
-    last_password = fields.CharField(max_length=255, null=True)
+class User(Base):
+    __tablename__ = 'users'
 
-    class Meta:
-        table = 'credentials_local'
-
-
-class CredentialsGoogle(Model):
-    id = fields.IntField(pk=True)
-    user = fields.ForeignKeyField('models.User', related_name='credentials_google', on_delete=fields.CASCADE)
-    google_user_id = fields.CharField(max_length=255, unique=True)
-
-    class Meta:
-        table = 'credentials_google'
-
-
-class CredentialsFacebook(Model):
-    id = fields.IntField(pk=True)
-    user = fields.ForeignKeyField('models.User', related_name='credentials_facebook', on_delete=fields.CASCADE)
-    facebook_user_id = fields.CharField(max_length=255, unique=True)
-
-    class Meta:
-        table = 'credentials_facebook'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    username: Mapped[str] = mapped_column(String, nullable=True, unique=True)
+    hashed_password: Mapped[str] = mapped_column(String, nullable=False)
+    avatar: Mapped[str] = mapped_column(String, nullable=True)
+    confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
