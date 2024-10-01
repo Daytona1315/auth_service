@@ -15,6 +15,14 @@ from src.database.models import User
 from src.schemas.auth_schema import User, Token, UserCreate, BaseUser
 from src.settings import settings
 
+'''
+Задачи:
+1. Поднять метод авторизации по той же схеме что и метод авторизации.
+2. Решить проблему: регистрация проверяет только почту на уникальность,
+должна проверять и имя пользователя тоже.
+3. Наладить обработку ошибок в методах.
+'''
+
 
 class AuthService:
 
