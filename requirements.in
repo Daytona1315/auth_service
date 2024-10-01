@@ -1,0 +1,14 @@
+fastapi
+pydantic
+pydantic-settings
+uvicorn
+sqlalchemy
+asyncpg
+markupsafe
+mako
+alembic
+psycopg2-binary
+python-dotenv
+python-jose
+passlib
+bcrypt
