@@ -23,10 +23,16 @@ async def sign_up(user_data: UserCreate,
 async def sign_in(form_data: UserLogin,
                   service: AuthService = Depends()
                   ):
-    await service.authenticate_user(
-        form_data.username,
-        form_data.password,
-    )
+    token = await service.authenticate_user(
+            form_data.username,
+            form_data.password,
+        )
+    return token
+
+
+@router.get('/user', response_model=User)
+async def get_user(user: User = Depends(AuthService.get_current_user)):
+    return user
 
 
 @router.get('/users', response_model=List[BaseUser])

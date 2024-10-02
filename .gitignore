@@ -1,5 +1,5 @@
 ./venv
 .idea
 .env
-./alembic
-./alembic.ini
+/alembic
+alembic.ini
