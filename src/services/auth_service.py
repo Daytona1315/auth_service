@@ -15,14 +15,6 @@ from src.database.models import User
 from src.schemas.auth_schema import User, Token, UserCreate, BaseUser
 from src.settings import settings
 
-'''
-Задачи:
-1. Поднять метод авторизации по той же схеме что и метод авторизации. (OK)
-2. Решить проблему: регистрация проверяет только почту на уникальность,
-должна проверять и имя пользователя тоже. (OK)
-3. Наладить обработку ошибок в методах.
-'''
-
 
 class AuthService:
     """The service for registration and authentication of users."""
@@ -33,7 +25,7 @@ class AuthService:
     def get_current_user(token: str = Depends(oauth2_schema)) -> User:
         return AuthService.validate_token(token)
 
-    # OAUTH2 METHODS----------
+    # OAUTH2 METHODS ----------
     @classmethod
     def verify_password(cls, raw_password: str, hash_password: str) -> bool:
         return bcrypt.verify(raw_password, hash_password)
@@ -63,7 +55,8 @@ class AuthService:
         except ValidationError:
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,
-                detail='Cannot validate token')
+                detail='Cannot validate token'
+            )
 
         return user
 
@@ -78,11 +71,8 @@ class AuthService:
             'sub': str(user_data.id),
             'user': user_data.model_dump(),
         }
-        token = jwt.encode(
-            payload,
-            settings.jwt_secret,
-            algorithm=settings.jwt_algorithm,
-        )
+        token = jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+
         return Token(access_token=token)
 
     # CREATION OF ASYNC DATABASE SESSION ----------

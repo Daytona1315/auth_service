@@ -1,5 +1,4 @@
 from typing import List
-
 from fastapi import APIRouter, Depends
 
 from src.schemas.auth_schema import UserCreate, Token, UserLogin, User, BaseUser
@@ -11,6 +10,7 @@ router = APIRouter(
 )
 
 
+# NEW USER REGISTRATION
 @router.post('/sign-up', response_model=Token)
 async def sign_up(user_data: UserCreate,
                   service: AuthService = Depends()
@@ -19,6 +19,7 @@ async def sign_up(user_data: UserCreate,
     return token
 
 
+# USER SIGN IN
 @router.post('/sign-in', response_model=Token)
 async def sign_in(form_data: UserLogin,
                   service: AuthService = Depends()
@@ -30,11 +31,17 @@ async def sign_in(form_data: UserLogin,
     return token
 
 
-@router.get('/user', response_model=User)
-async def get_user(user: User = Depends(AuthService.get_current_user)):
+# GET USER'S DATA
+@router.get('/user', response_model=BaseUser)
+def get_user(user: BaseUser = Depends(AuthService.get_current_user)):
+    """
+    Pass a JWT-token in request header.
+    Returns user's data: email, username
+    """
     return user
 
 
+# GET ALL USERS
 @router.get('/users', response_model=List[BaseUser])
 async def get_users(service: AuthService = Depends()):
     users = await service.get_users()

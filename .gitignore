@@ -3,3 +3,4 @@
 .env
 /alembic
 alembic.ini
+requirements.txt
