@@ -8,6 +8,8 @@ from src.schemas.auth_schema import BaseUser
 
 
 class UtilitiesService:
+    """Service with various helpful methods"""
+
     def __init__(self, async_session: AsyncSession = Depends(get_async_session)):
         self.async_session = async_session
 

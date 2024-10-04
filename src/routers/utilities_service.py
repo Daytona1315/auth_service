@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from src.services.utilities_service import UtilitiesService
 from src.schemas.auth_schema import BaseUser
 
+
 router = APIRouter(
     prefix='/utils',
     tags=['utils'],
