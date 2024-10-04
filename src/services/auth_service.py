@@ -11,8 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import models
 from src.database.engine import get_async_session
-from src.database.models import User
-from src.schemas.auth_schema import User, Token, UserCreate, BaseUser
+from src.schemas.auth_schema import User, Token, UserCreate
 from src.settings import settings
 
 
@@ -155,14 +154,3 @@ class AuthService:
                 )
 
             return self.create_token(user)
-
-    # GET ALL USERS METHOD ----------
-    async def get_users(self):
-        async with self.async_session as session:
-
-            # Fetch the database and get all users
-            result = await session.execute(select(models.User))
-            users = result.scalars().all()
-
-            # Return a list of users according to the model BaseUser
-            return [BaseUser.model_validate(user) for user in users]

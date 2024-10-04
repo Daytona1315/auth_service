@@ -1,7 +1,8 @@
-from typing import List
 from fastapi import APIRouter, Depends
 
-from src.schemas.auth_schema import UserCreate, Token, UserLogin, User, BaseUser
+from src.schemas.auth_schema import (
+    UserCreate, Token, UserLogin, BaseUser
+)
 from src.services.auth_service import AuthService
 
 router = APIRouter(
@@ -39,10 +40,3 @@ def get_user(user: BaseUser = Depends(AuthService.get_current_user)):
     Returns user's data: email, username
     """
     return user
-
-
-# GET ALL USERS
-@router.get('/users', response_model=List[BaseUser])
-async def get_users(service: AuthService = Depends()):
-    users = await service.get_users()
-    return users
