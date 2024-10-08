@@ -117,7 +117,7 @@ class AuthService:
         return token
 
     # USER AUTHENTICATION METHOD ----------
-    async def authenticate_user(self, password: str, email: str,) -> Token:
+    async def authenticate_user(self, email: str, password: str) -> Token:
         async with self.session.begin():
             try:
 
