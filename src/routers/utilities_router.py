@@ -16,3 +16,9 @@ router = APIRouter(
 async def get_users(service: UtilitiesService = Depends()):
     users = await service.get_users()
     return users
+
+
+# @router.get('/', response_model=List[CredentialsTable])
+# async def get_table(service: UtilitiesService = Depends()):
+#     users = await service.get_table()
+#     return users

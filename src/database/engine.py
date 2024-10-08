@@ -6,7 +6,6 @@ from src.settings import settings
 
 async_engine = create_async_engine(
     settings.db_url,
-    echo=True,
 )
 
 AsyncSessionLocal = async_sessionmaker(

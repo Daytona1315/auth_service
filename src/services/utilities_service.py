@@ -16,7 +16,6 @@ class UtilitiesService:
     # GET ALL USERS METHOD ----------
     async def get_users(self):
         async with self.async_session as session:
-
             # Fetch the database and get all users
             result = await session.execute(select(models.User))
             users = result.scalars().all()

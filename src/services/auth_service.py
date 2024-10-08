@@ -4,14 +4,17 @@ from jose import jwt, JWTError
 from passlib.hash import bcrypt
 from pydantic import ValidationError
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from starlette import status
 from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import models
 from src.database.engine import get_async_session
-from src.schemas.auth_schema import User, Token, UserCreate
+from src.schemas.auth_schema import (
+    User, Token, UserCreate,
+)
 from src.settings import settings
 
 
@@ -62,7 +65,7 @@ class AuthService:
     @classmethod
     def create_token(cls, user: User, ) -> Token:
         user_data = User.model_validate(user)
-        now = datetime.utcnow()
+        now = datetime.now()
         payload = {
             'iat': now,
             'nbf': now,
@@ -75,82 +78,72 @@ class AuthService:
         return Token(access_token=token)
 
     # CREATION OF ASYNC DATABASE SESSION ----------
-    def __init__(self, async_session: AsyncSession = Depends(get_async_session)):
-        self.async_session = async_session
+    def __init__(self, session: AsyncSession = Depends(get_async_session)):
+        self.session = session
 
     # USER REGISTRATION METHOD ----------
     async def register_new_user(self, user_data: UserCreate) -> Token:
-        async with self.async_session as session:
-
-            # Check email is already exist
-            table = await session.execute(select(models.User).filter_by(email=user_data.email))
-            user = table.scalar()
-            if user:
-                raise HTTPException(
-                    status.HTTP_409_CONFLICT,
-                    detail="E-mail already exist",
-                )
-            # Check username is already exist
-            table = await session.execute(select(models.User).filter_by(username=user_data.username))
-            user = table.scalar()
-            if user:
-                raise HTTPException(
-                    status.HTTP_409_CONFLICT,
-                    detail="Username already exist",
-                )
-
-            # Create a user in database
-            new_user = models.User(
-                email=user_data.email,
-                username=user_data.username,
-                hashed_password=self.hash_password(user_data.password)
-            )
-
-            # Commiting changes
+        async with (self.session.begin()):
             try:
-                session.add(new_user)
-                await session.commit()
-            except IntegrityError:
-                await session.rollback()
-                raise HTTPException(
-                    status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Something went wrong",
+
+                # Adding new user to db and return id for further operations
+                user_stmt = insert(models.User).values(
+                    username=user_data.username,
+                    email=user_data.email
+                ).returning(models.User.id)
+                user_result = await self.session.execute(user_stmt)
+                user_id = user_result.scalar()
+
+                # Adding credentials to db
+                credentials_stmt = insert(models.CredentialsLocal).values(
+                    user_id=user_id,
+                    email=user_data.email,
+                    hashed_password=self.hash_password(user_data.password)
                 )
+                await self.session.execute(credentials_stmt)
 
-            # Fetching user again (now he has an id) to create a token for him
-            table = await session.execute(select(models.User).filter_by(email=user_data.email))
-            user = table.scalar()
-            token = self.create_token(user)
+            # Handle errors
+            except IntegrityError:
+                await self.session.rollback()
+                raise HTTPException(status_code=500, detail="Failed to create user and credentials.")
 
-            return token
+        # Create token
+        user = User(
+            email=user_data.email,
+            username=user_data.username,
+            id=user_id
+        )
+        token = self.create_token(user)
+        return token
 
     # USER AUTHENTICATION METHOD ----------
-    async def authenticate_user(self, username: str, password: str) -> Token:
-        async with self.async_session as session:
-            result = await session.execute(select(models.User).filter_by(username=username))
-            user = result.scalar()
+    async def authenticate_user(self, password: str, email: str,) -> Token:
+        async with self.session.begin():
+            try:
 
-            # Handle exception if user doesn't exist
-            if not user:
-                raise HTTPException(
-                    status.HTTP_404_NOT_FOUND,
-                    detail="User not found",
+                # Search for user
+                user_stmt = select(models.CredentialsLocal).filter_by(
+                    email=email
                 )
+                user_result = await self.session.execute(user_stmt)
+                user = user_result.scalar()
 
-            # Fetching for user's hashed password
-            result = await session.execute(select(models.User.hashed_password).filter_by(id=user.id))
-            hashed_password = result.scalar()
-            if not hashed_password:
-                raise HTTPException(
-                    status.HTTP_404_NOT_FOUND,
-                    detail="Password is incorrect",
+                # Handle exception if user doesn't exist
+                if not user:
+                    raise HTTPException(
+                        status.HTTP_404_NOT_FOUND,
+                        detail="User not found",
+                    )
+
+                # Fetching for user's hashed password
+                password_stmt = select(models.CredentialsLocal.hashed_password).filter_by(
+                    email=email
                 )
+                password_result = await self.session.execute(password_stmt)
+                hashed_password = password_result.scalar()
+                if not hashed_password:
+                    raise HTTPException(
+                        status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail="Something went wrong",
+                    )
 
-            # Handle exception when couldn't verify password
-            if not self.verify_password(password, hashed_password):
-                raise HTTPException(
-                    status.HTTP_401_UNAUTHORIZED,
-                    detail="Cannot validate credentials"
-                )
-
-            return self.create_token(user)
