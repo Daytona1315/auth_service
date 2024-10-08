@@ -26,7 +26,7 @@ async def sign_in(form_data: UserLogin,
                   service: AuthService = Depends()
                   ):
     token = await service.authenticate_user(
-            form_data.username,
+            form_data.email,
             form_data.password,
         )
     return token

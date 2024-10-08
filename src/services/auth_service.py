@@ -127,7 +127,7 @@ class AuthService:
                 )
                 user_result = await self.session.execute(user_stmt)
                 user = user_result.scalar()
-
+                print(user)
                 # Handle exception if user doesn't exist
                 if not user:
                     raise HTTPException(
@@ -135,15 +135,35 @@ class AuthService:
                         detail="User not found",
                     )
 
-                # Fetching for user's hashed password
-                password_stmt = select(models.CredentialsLocal.hashed_password).filter_by(
+                # Get password and id for further operations
+                hashed_password = user.hashed_password
+                user_id = user.user_id
+
+                # We also need username, which contains in another table
+                username_stmt = select(models.User.username).filter_by(
                     email=email
                 )
-                password_result = await self.session.execute(password_stmt)
-                hashed_password = password_result.scalar()
-                if not hashed_password:
-                    raise HTTPException(
-                        status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail="Something went wrong",
-                    )
+                username_result = await self.session.execute(username_stmt)
+                username = username_result.scalar()
 
+            # Handle any errors
+            except SQLAlchemyError:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Something went wrong"
+                )
+
+            # Verify password
+            if not self.verify_password(password, hashed_password):
+                raise HTTPException(
+                    status_code=401,
+                    detail="Cannot validate credentials"
+                )
+
+            # Create token and return it
+            user = User(
+                id=user_id,
+                email=email,
+                username=username
+            )
+            return self.create_token(user)
