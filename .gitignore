@@ -4,3 +4,4 @@
 /alembic
 alembic.ini
 requirements.txt
+redis.conf

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import models
 from src.database.engine import get_async_session
+from src.schemas.utilities_schema import CredentialsTable
 from src.schemas.auth_schema import BaseUser
 
 
@@ -14,7 +15,7 @@ class UtilitiesService:
         self.async_session = async_session
 
     # GET ALL USERS METHOD ----------
-    async def get_users(self):
+    async def get_users(self) -> list:
         async with self.async_session as session:
             # Fetch the database and get all users
             result = await session.execute(select(models.User))

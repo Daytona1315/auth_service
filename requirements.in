@@ -12,3 +12,4 @@ python-dotenv
 python-jose
 passlib
 bcrypt
+aioredis

@@ -5,6 +5,9 @@ from src.schemas.auth_schema import (
 )
 from src.services.auth_service import AuthService
 
+from src.http_exceptions import ServiceUnavailableException
+
+
 router = APIRouter(
     prefix='/auth',
     tags=['auth'],
@@ -16,8 +19,11 @@ router = APIRouter(
 async def sign_up(user_data: UserCreate,
                   service: AuthService = Depends()
                   ):
-    token = await service.register_new_user(user_data)
-    return token
+    try:
+        token = await service.register_new_user(user_data)
+        return token
+    except ConnectionRefusedError:
+        raise ServiceUnavailableException
 
 
 # USER SIGN IN
@@ -25,11 +31,14 @@ async def sign_up(user_data: UserCreate,
 async def sign_in(form_data: UserLogin,
                   service: AuthService = Depends()
                   ):
-    token = await service.authenticate_user(
+    try:
+        token = await service.authenticate_user(
             form_data.email,
             form_data.password,
         )
-    return token
+        return token
+    except ConnectionRefusedError:
+        raise ServiceUnavailableException
 
 
 # GET USER'S DATA
@@ -39,4 +48,7 @@ def get_user(user: BaseUser = Depends(AuthService.get_current_user)):
     Pass a JWT-token in request header.
     Returns user's data: email, username
     """
-    return user
+    try:
+        return user
+    except ConnectionRefusedError:
+        raise ServiceUnavailableException
