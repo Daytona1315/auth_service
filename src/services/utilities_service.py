@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import models
 from src.database.engine import get_async_session
-from src.schemas.utilities_schema import CredentialsTable
 from src.schemas.auth_schema import BaseUser
 
 

@@ -13,11 +13,12 @@ class Settings(BaseSettings):
     jwt_secret: str
     jwt_algorithm: str = 'HS256'
     jwt_expiration: int = 3600
-    redis_url: str
+    redis_host: str
+    redis_port: int
+    redis_password: str
 
 
 settings = Settings(
     _env_file='../.env',
     _env_file_encoding='utf-8',
-    _case_sensitive=False,
 )

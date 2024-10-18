@@ -5,7 +5,7 @@ from passlib.hash import bcrypt
 from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from starlette import status
 from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -77,7 +77,7 @@ class AuthService:
 
         return Token(access_token=token)
 
-    # CREATION OF ASYNC DATABASE SESSION ----------
+    # CREATION OF DATABASE SESSIONS ----------
     def __init__(self, session: AsyncSession = Depends(get_async_session)):
         self.session = session
 
@@ -102,18 +102,19 @@ class AuthService:
                 )
                 await self.session.execute(credentials_stmt)
 
-            # Handle errors
+                # Create token
+                user = User(
+                    email=user_data.email,
+                    username=user_data.username,
+                    id=user_id
+                )
+                token = self.create_token(user)
+
             except IntegrityError:
                 await self.session.rollback()
-                raise HTTPException(status_code=500, detail="Failed to create user and credentials.")
+                raise HTTPException(500,
+                                    detail=f"Failed to create user and credentials")
 
-        # Create token
-        user = User(
-            email=user_data.email,
-            username=user_data.username,
-            id=user_id
-        )
-        token = self.create_token(user)
         return token
 
     # USER AUTHENTICATION METHOD ----------
@@ -131,7 +132,7 @@ class AuthService:
                 # Handle exception if user doesn't exist
                 if not user:
                     raise HTTPException(
-                        status.HTTP_404_NOT_FOUND,
+                        404,
                         detail="User not found",
                     )
 
@@ -149,14 +150,14 @@ class AuthService:
             # Handle any errors
             except SQLAlchemyError:
                 raise HTTPException(
-                    status_code=500,
+                    500,
                     detail="Something went wrong"
                 )
 
             # Verify password
             if not self.verify_password(password, hashed_password):
                 raise HTTPException(
-                    status_code=401,
+                    401,
                     detail="Cannot validate credentials"
                 )
 
