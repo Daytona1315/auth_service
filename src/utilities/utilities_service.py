@@ -3,8 +3,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import models
-from src.database.engine import get_async_session
-from src.schemas.auth_schema import BaseUser
+from src.database.sessionmaker import get_async_session
+from src.auth.auth_schema import BaseUser
 
 
 class UtilitiesService:

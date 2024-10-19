@@ -11,8 +11,8 @@ from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import models
-from src.database.engine import get_async_session
-from src.schemas.auth_schema import (
+from src.database.sessionmaker import get_async_session
+from src.auth.auth_schema import (
     User, Token, UserCreate,
 )
 from src.settings import settings

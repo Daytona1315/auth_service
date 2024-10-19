@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 
-from src.schemas.auth_schema import (
+from src.auth.auth_schema import (
     UserCreate, Token, UserLogin, BaseUser
 )
-from src.services.auth_service import AuthService
+from src.auth.auth_service import AuthService
 
 from src.http_exceptions import ServiceUnavailableException
 
@@ -44,10 +44,6 @@ async def sign_in(form_data: UserLogin,
 # GET USER'S DATA
 @router.get('/user', response_model=BaseUser)
 def get_user(user: BaseUser = Depends(AuthService.get_current_user)):
-    """
-    Pass a JWT-token in request header.
-    Returns user's data: email, username
-    """
     try:
         return user
     except ConnectionRefusedError:
